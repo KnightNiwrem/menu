@@ -1,11 +1,35 @@
 {
+    "name": "@grammyjs/menu",
+    "version": "2.0.0-beta.0",
+    "exports": "./src/mod.ts",
+    "imports": {
+        "@grammyjs/grammy": "jsr:@grammyjs/grammy@^2.0.0-beta.8"
+    },
+    "license": "MIT",
+    "publish": {
+        "include": [
+            "LICENSE",
+            "README.md",
+            "src/**/*.ts"
+        ]
+    },
+    "nodeModulesDir": "none",
     "lock": false,
+    "minimumDependencyAge": {
+        "exclude": ["jsr:@grammyjs/grammy"]
+    },
+    "tasks": {
+        "ok": "deno fmt --check && deno lint && deno check && deno test",
+        "publish:jsr": "deno publish",
+        "publish:jsr:dry-run": "deno publish --dry-run"
+    },
     "fmt": {
         "indentWidth": 4,
-        "proseWrap": "preserve",
-        "exclude": ["./node_modules/", "./out/", "./package-lock.json"]
+        "proseWrap": "preserve"
     },
     "lint": {
-        "exclude": ["./node_modules/", "./out/", "./package-lock.json"]
+        "rules": {
+            "include": ["no-top-level-await"]
+        }
     }
 }
