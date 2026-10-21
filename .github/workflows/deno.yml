@@ -68,3 +68,6 @@ jobs:
 
             - name: Check types
               run: deno check --allow-import src/mod.ts
+
+            - name: Run tests
+              run: deno task test
