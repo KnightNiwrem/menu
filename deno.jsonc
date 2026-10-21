@@ -1,8 +1,9 @@
 {
     "lock": false,
     "tasks": {
-        "ok": "deno fmt --check && deno lint && deno task check",
-        "check": "deno check --allow-import"
+        "ok": "deno fmt --check && deno lint && deno task check && deno task test",
+        "check": "deno check --allow-import",
+        "test": "deno test --allow-import tests/"
     },
     "fmt": {
         "indentWidth": 4,

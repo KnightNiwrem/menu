@@ -233,6 +233,18 @@ type MaybeDynamicRange<C extends Context> = MaybeRawRange<C> | DynamicRange<C>;
 
 const ops = Symbol("menu building operations");
 
+/** Configuration options for a menu range. */
+export interface MenuRangeOptions<C extends Context> {
+    /**
+     * Default payload for callback buttons added directly to this range.
+     * Explicit button payloads override this value, including an empty string.
+     * Ranges passed to `append` or `addRange`, including raw ranges, and ranges
+     * created by `dynamic` do not inherit it.
+     * Dynamic payloads are evaluated separately for each button when rendered.
+     */
+    payload?: MaybeDynamic<C, string>;
+}
+
 /**
  * A menu range is a two-dimensional array of menu buttons.
  *
@@ -243,6 +255,23 @@ const ops = Symbol("menu building operations");
 export class MenuRange<C extends Context> {
     /** Internal list of range generator functions */
     [ops]: MaybeDynamicRange<C>[] = [];
+    private readonly defaultPayload: MaybeDynamic<C, string> | undefined;
+
+    /**
+     * Creates a menu range, optionally with a default callback button payload.
+     *
+     * ```ts
+     * const range = new MenuRange({ payload: 'item-42' })
+     *   .text('Details')
+     *   .text({ text: 'Without payload', payload: '' })
+     * ```
+     *
+     * @param options Configuration options for this range
+     */
+    constructor(options: MenuRangeOptions<C> = {}) {
+        this.defaultPayload = options.payload;
+    }
+
     /**
      * This method is used internally whenever a new range is added.
      *
@@ -259,7 +288,14 @@ export class MenuRange<C extends Context> {
      * @param btns Menu button object
      */
     add(...btns: MenuButton<C>[]) {
-        return this.addRange([btns]);
+        return this.addRange([
+            btns.map((btn) =>
+                "middleware" in btn && btn.payload === undefined &&
+                    this.defaultPayload !== undefined
+                    ? { ...btn, payload: this.defaultPayload }
+                    : btn
+            ),
+        ]);
     }
     /**
      * Adds a 'line break'. Call this method to make sure that the next added
@@ -730,7 +766,7 @@ export class MenuRange<C extends Context> {
 /**
  * Configuration options for the menu.
  */
-export interface MenuOptions<C extends Context> {
+export interface MenuOptions<C extends Context> extends MenuRangeOptions<C> {
     /**
      * Menus will automatically call `ctx.answerCallbackQuery` with no
      * arguments. If you want to call the method yourself, for example because
@@ -826,7 +862,9 @@ export class Menu<C extends Context = Context> extends MenuRange<C>
     protected parent: string | undefined = undefined;
     protected index: Map<string, Menu<C>> = new Map();
     protected readonly options: Required<
-        MenuOptions<C> & { onMenuOutdated: string | false | MenuMiddleware<C> }
+        Omit<MenuOptions<C>, keyof MenuRangeOptions<C>> & {
+            onMenuOutdated: string | false | MenuMiddleware<C>;
+        }
     >;
 
     /**
@@ -841,7 +879,7 @@ export class Menu<C extends Context = Context> extends MenuRange<C>
      * @param options Further configuration options
      */
     constructor(protected readonly id: string, options: MenuOptions<C> = {}) {
-        super();
+        super(options);
         if (id.includes("/")) {
             throw new Error(
                 `You cannot use '/' in a menu identifier ('${id}')`,
